@@ -1,0 +1,32 @@
+body {
+  background-color: #667765;
+}
+
+.main{
+  text-align: center
+}
+
+#question_container{
+  margin: 25px 300px 25px;
+  font-size:40px;
+  font-family: 'Arvo', serif;
+}
+
+#enter_a_lie{
+	color:#d8ddaf;
+	font-size:30px;
+	font-family: 'Sigmar One', cursive;
+}
+
+#input_lie{
+	background-color:black;
+	color:white;
+	font-size:30px;
+	font-family: 'Arvo', serif;
+	text-align:center;
+}
+
+h1 {
+  color: navy;
+  margin-left: 20px;
+}

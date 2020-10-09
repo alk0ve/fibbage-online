@@ -9,13 +9,13 @@ function parse_and_set_question(data){
 	if (question){
 		// set the question
 		var question_str = question.v.replace("<BLANK>", "______");
-		document.getElementById("p_question").innerHTML =  question_str;
+		document.getElementById("question_container").innerHTML =  question_str;
 	} else {
 		console.log('No question in the json');
 	}
 }
 
-async function get_question_json(json_path='./data.jet'){
+async function get_question_json(json_path='./data'){
 	const response = await fetch(json_path);
 	if (response.status !== 200) {
 		console.log('Looks like there was a problem. Status Code: ' + response.status);
@@ -46,8 +46,16 @@ function set_timer(duration){
 	}, 1000);
 }
 
-function send_lie(){
+function send_lie(lie){
 	// check if the answer is not the real answer
 	// send the answer to the server with post
+	// stop timer
 	alert("submited lie!");
 };
+
+
+function enter_send_form(e) {
+	if((e && e.keyCode == 13) || e == 0) {
+		send_lie(e)
+   }
+}

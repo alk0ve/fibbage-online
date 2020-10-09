@@ -3,28 +3,18 @@
   <head>
   <link href="https://fonts.googleapis.com/css2?family=Arvo:wght@700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Sigmar+One&display=swap" rel="stylesheet">
+  <link href="question.css" rel="stylesheet" >
     <title>Question Page!</title>
   </head>
-  <body onload="start()" style="background-color:#667765;">
-    <div class="question" align="center">
-	  <h2 id="p_question" style="margin: 25px 300px 25px;font-size:40px;font-family: 'Arvo', serif;">loading question...</h2>
+  <body onload="start()">
+    <div class="main">
+	  <h2 id="question_container">loading question...</h2>
 	  <form id="frm_answer" action="javascript:;" onsubmit="send_fake_answer(this)">
-		  <p style="color:#d8ddaf;font-size:30px;font-family: 'Sigmar One', cursive;"> ENTER A LIE! </p>
-		  <input id="input_fake_answer" style="background-color:black;color:white;font-size:30px;font-family: 'Arvo', serif;text-align:center;"
-		  onKeyPress="return enter_send_form(event)"><br>
-		  <input type="submit" style="display: none" >
+		  <p id="enter_a_lie"> ENTER A LIE! </p>
+		  <input id="input_lie" onKeyPress="return enter_send_form(event)"><br>
 	  </form>
 	  <p id="countdown" style="font-size:40px"> 5 </p>
 	</div>
   </body>
-<script src="question.js"> 
- </script>
- <script>
-function enter_send_form(e) {
-   if((e && e.keyCode == 13) || e == 0) {
-     alert("The form was submitted");
-     document.forms.frm_answer.submit();
-   }
-}
-</script>
+<script src="question.js"> </script>
 </html>
