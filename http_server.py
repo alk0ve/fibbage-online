@@ -6,14 +6,14 @@ import mimetypes
 import posixpath
 import shutil
 from http import HTTPStatus
-import jsonplay
+import json
 
 PORT = 8080
 SERVER_ADDRESS = '127.0.0.1'
 SITE_FOLDER = 'site'
 SITE_FOLDER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), SITE_FOLDER)
 
-PATH_ALIASES = {'/': 'host.html', '/host':'host.html', '/':'play.html', '/question.html', '/data.jet'}
+PATH_ALIASES = {'/': 'host.html', '/host':'host.html', '/':'play.html', '/question':'/question.html', '/data':'/data.jet'}
 ALLOWED_EXTENSIONS = ['.html', '.htm', '.js', 'jet']
 
 
