@@ -9,9 +9,9 @@
   <body onload="start()">
     <div class="main">
 	  <h2 id="question_container">loading question...</h2>
-	  <form id="frm_answer" action="javascript:;" onsubmit="send_fake_answer(this)">
+	  <form id="frm_answer" action="javascript:;">
 		  <p id="enter_a_lie"> ENTER A LIE! </p>
-		  <input id="input_lie" onKeyPress="return enter_send_form(event)"><br>
+		  <input id="input_lie" onKeyPress="return enter_send_form(event, this)"><br>
 	  </form>
 	  <p id="countdown" style="font-size:40px"> 5 </p>
 	</div>
