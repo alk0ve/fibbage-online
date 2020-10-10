@@ -1,25 +1,25 @@
 function start() {
     console.log("starting");
-    doPost('/some_post_url', {'key': 'value'}, onPostReply)
-
+    response = doPost('/some_post_url', {'key': 'value'})
+    document.body = JSON.stringify(response)
   }
 
 
-  function doPost(url_path, data_dict, onReplyCb)
+  async function doPost(url_path, data)
   {
     console.log("sending POST");
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", url_path, true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.onload = onReplyCb;
 
-    xhr.send(JSON.stringify(data_dict));
+    const response = await fetch(url_path, {
+      method: 'POST', // *GET, POST, PUT, DELETE, etc.
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data) // body data type must match "Content-Type" header
+    });
+
     console.log("sent POST");
+
+    return response.json(); // parses JSON response into native JavaScript objects    
   }
 
-  function onPostReply()
-  {
-    console.log("received POST");
-    var data = JSON.parse(this.responseText);
-    document.body.innerHTML = JSON.stringify(data);
-  }
+  
