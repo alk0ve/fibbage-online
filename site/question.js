@@ -9,9 +9,10 @@ answer sending scenrios:
 */
 let answers = []
 let countdownTimer = null
+let data = []
 
 async function start(){
-	let data = await get_question_json();
+	data = await get_question_json();
 	answers = get_correct_answers(data);
 	parse_and_set_question(data);
 	countdownTimer = set_timer(document.getElementById("countdown").innerHTML-1, answers, data);
@@ -86,6 +87,11 @@ function set_timer(duration, answers, data){
 	return countdownTimer;
 }
 
+function lie_for_me(){
+	alert("You got it!");
+	send_our_lie(data);
+}
+
 function is_lie_true(lie, answers){
 	return answers.find(element => element === lie);
 }
@@ -98,24 +104,25 @@ function send_our_lie(data){
 }
 
 function send_lie(lie, generated=false){
-	// check if the answer is not the real answer
-	// send the answer to the server with post
+	// TODO: send the answer to the server with post
+	// update UI
+	document.getElementById('input_lie').readOnly = true;
+	document.getElementById('lie_for_me').disabled = true;
 	// stop timer
-	document.getElementById('input_lie').readOnly = true
+	if(countdownTimer){
+		clearInterval(countdownTimer);
+		document.getElementById("countdown").innerHTML = 0;
+	}
 };
 
 function enter_send_form(e, lie) {
+	// TODO: add state to prevent this function from running again
 	if((e && e.keyCode == 13) || e == 0) {
-		// TODO: answers should be a global
 		if(is_lie_true(lie.value, answers)){
 			alert("You can't lie the truth! enter a lie");
 		} else {
 			send_lie(lie.value);
 			alert("submited lie!");
-			if(countdownTimer){
-				clearInterval(countdownTimer);
-				document.getElementById("countdown").innerHTML = 0;
-			}
 		}
    }
 }
