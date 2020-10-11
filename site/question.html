@@ -1,9 +1,21 @@
 <!doctype html>
 <html>
   <head>
-    <title>Fibbage Online!</title>
+  <link href="https://fonts.googleapis.com/css2?family=Arvo:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sigmar+One&display=swap" rel="stylesheet">
+  <link href="question.css" rel="stylesheet" >
+    <title>Question Page!</title>
   </head>
-  <body onload=start()>
+  <body onload="start()">
+    <div class="main">
+	  <h2 id="question_container">loading question...</h2>
+	  <form id="frm_answer" action="javascript:;">
+		  <p id="enter_a_lie"> ENTER A LIE! </p>
+		  <input id="input_lie" onKeyPress="return enter_send_form(event, this)"><br>
+	  </form>
+	  <button id="lie_for_me" onClick="lie_for_me()"> LIE FOR ME </button><br>
+	  <p id="countdown" style="font-size:40px"> 30 </p>
+	</div>
   </body>
-<script src="fib_shared.js">  </script>
+<script src="question.js"> </script>
 </html>
