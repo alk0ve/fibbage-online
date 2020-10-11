@@ -1,3 +1,4 @@
+from fib_game import FibGame
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import os
 import datetime
@@ -7,14 +8,18 @@ import posixpath
 import shutil
 from http import HTTPStatus
 import json
+import logging
+import sys
+import argparse
+
+from fib_game import FibGame
 
 PORT = 8080
 SERVER_ADDRESS = '127.0.0.1'
 SITE_FOLDER = 'site'
 SITE_FOLDER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), SITE_FOLDER)
 
-PATH_ALIASES = {'/': 'host.html', '/host':'host.html', '/play':'play.html',}
-ALLOWED_EXTENSIONS = ['.html', '.htm', '.js']
+PATH_ALIASES = {'/': 'host.html'}
 
 
 # based on http.server.SimpleHTTPRequestHandler
@@ -23,6 +28,8 @@ class HorribleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 
     def __init__(self, *args, directory=None, **kwargs):
+        self.game = FibGame()
+
         if directory is None:
             directory = os.getcwd()
         self.directory = directory
@@ -46,21 +53,24 @@ class HorribleHTTPRequestHandler(BaseHTTPRequestHandler):
             f.close()
 
 
-    def _set_response(self):
-        self.send_response(HTTPStatus.OK)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-
-
     def do_POST(self):
         content_length = int(self.headers['Content-Length']) # <--- Gets the size of data
         post_data = self.rfile.read(content_length) # <--- Gets the data itself
         json_data = json.loads(post_data.decode('utf-8'))
-        print("POST for %s: %s" % (self.path, json_data))
 
-        self._set_response()
+        logging.debug("POST for %s: %s" % (self.path, json_data))
+        post_path = self.path.lstrip('/')
+        if post_path not in self.game.POST_HANDLERS:
+            self.send_error(HTTPStatus.NOT_FOUND, "POST endpoint not found")
+            return
+
+        self.send_response(HTTPStatus.OK)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+
         # send reply JSON
-        reply = {"reply": "ok"}
+        reply = self.game.POST_HANDLERS[post_path](json_data)
+        logging.debug(reply)
         self.wfile.write(json.dumps(reply).encode('utf-8'))
 
 
@@ -86,8 +96,7 @@ class HorribleHTTPRequestHandler(BaseHTTPRequestHandler):
         page_path = os.path.abspath(os.path.join(SITE_FOLDER_PATH, page_path))
 
         if not page_path.startswith(SITE_FOLDER_PATH):
-            print("URL path %s not resolved" % self.path)
-            breakpoint()
+            logging.ERROR("URL path %s not resolved" % self.path)
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
             return None
 
@@ -176,8 +185,26 @@ class HorribleHTTPRequestHandler(BaseHTTPRequestHandler):
         })
 
 
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--logs', action='store_true', help='display more logs')
+    args = parser.parse_args()
 
-with HTTPServer((SERVER_ADDRESS, PORT), HorribleHTTPRequestHandler) as httpd:
-    print("serving at port", PORT)
-    httpd.serve_forever()
+    root = logging.getLogger()
+    if args.logs:
+        root.setLevel(logging.DEBUG)
+    else:
+        root.setLevel(logging.WARNING)
 
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s, %(name)s [%(levelname)s]: %(message)s')
+    handler.setFormatter(formatter)
+    root.addHandler(handler)
+
+    with HTTPServer((SERVER_ADDRESS, PORT), HorribleHTTPRequestHandler) as httpd:
+        print("serving at port", PORT)
+        httpd.serve_forever()
+
+if "__main__" == __name__:
+    main()
