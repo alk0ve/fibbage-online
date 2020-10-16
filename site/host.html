@@ -1,9 +1,66 @@
 <!doctype html>
 <html>
   <head>
-    <title>Fibbage Online!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Arvo:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sigmar+One&display=swap" rel="stylesheet">
+    <link href="shared.css" rel="stylesheet" >
+    <title>Host a Fibbage Online! game</title>
   </head>
-  <body onload=start()>
+  <body >
+    <div class="main">
+      <h2 class="page_title_h2">Host a Fibbage Online! game</h2>
+      
+      <table class="table_style">
+        <tr>
+          <td class="table_left">
+            <label class="label_text" for="name">Name: </label>
+          </td>
+          <td>
+            <input class="input_style" id="name">
+          </td>
+        </tr>
+        <tr>
+          <td class="table_left">
+            <label class="label_text" for="rounds">Number of rounds: </label>
+          </td>
+          <td>
+            <input class="input_style" id="rounds" value="3">
+          </td>
+        </tr>
+        <tr>
+          <td class="table_left">
+            <label class="label_text" for="timer">Timer length: </label>
+          </td>
+          <td>
+            <input class="input_style" id="timer" value="30">
+          </td>
+        </tr>
+      </table>
+
+      <button class="zurb_button" nClick="host_game()"> Host a game! </button>
+    </div>
   </body>
-<script src="fib_shared.js">  </script>
+
+
+<script src="fib_shared.js"> </script>
+<script>
+
+// TODO validate input (name is not empty, rounds and timer length are positive integers
+// TODO wrap this into a form?..
+async function host_game(){
+  response = await doPost('/host',
+  {
+    'name': document.getElementById("name").value,
+    'rounds': document.getElementById("rounds").value,
+    'timer': document.getElementById("timer").value
+  })
+
+  console.log(response);
+
+  document.body.innerHTML = JSON.stringify(response); // TODO redirect instead
+}
+
+
+</script>
+
 </html>
