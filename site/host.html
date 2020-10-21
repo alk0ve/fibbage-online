@@ -16,7 +16,7 @@
             <label class="label_text" for="name">Name: </label>
           </td>
           <td>
-            <input class="input_style" id="name">
+            <input class="input_style" id="name" value="Alexei">
           </td>
         </tr>
         <tr>
@@ -37,7 +37,9 @@
         </tr>
       </table>
 
-      <button class="zurb_button" nClick="host_game()"> Host a game! </button>
+      <button class="zurb_button" onClick="host_game()"> Host a game! </button>
+      <br/><br/><br/>
+      <label class="label_text" id="error_label"></label>
     </div>
   </body>
 
@@ -46,18 +48,14 @@
 <script>
 
 // TODO validate input (name is not empty, rounds and timer length are positive integers
-// TODO wrap this into a form?..
 async function host_game(){
   response = await doPost('/host',
   {
     'name': document.getElementById("name").value,
     'rounds': document.getElementById("rounds").value,
     'timer': document.getElementById("timer").value
-  })
-
-  console.log(response);
-
-  document.body.innerHTML = JSON.stringify(response); // TODO redirect instead
+  },
+  "error_label")
 }
 
 

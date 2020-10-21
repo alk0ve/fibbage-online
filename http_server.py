@@ -1,4 +1,4 @@
-from fib_game import FibGame
+from os.path import isfile
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import os
 import datetime
@@ -12,7 +12,7 @@ import logging
 import sys
 import argparse
 
-from fib_game import FibGame
+from fib_game import *
 
 PORT = 8080
 SERVER_ADDRESS = '127.0.0.1'
@@ -21,18 +21,20 @@ SITE_FOLDER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), SITE
 
 PATH_ALIASES = {'/': 'host.html'}
 
+# global game instance
+FIB_GAME = FibGame()
+
+POST_RETURN_CODE = "return_code"
+POST_LOCATION = "location"
+POST_ERROR_MESSAGE = "error_message"
+POST_DATA = "data"
 
 # based on http.server.SimpleHTTPRequestHandler
 class HorribleHTTPRequestHandler(BaseHTTPRequestHandler):
     server_version = "HorribleHTTP/0.1"
 
 
-    def __init__(self, *args, directory=None, **kwargs):
-        self.game = FibGame()
-
-        if directory is None:
-            directory = os.getcwd()
-        self.directory = directory
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
@@ -59,19 +61,28 @@ class HorribleHTTPRequestHandler(BaseHTTPRequestHandler):
         json_data = json.loads(post_data.decode('utf-8'))
 
         logging.debug("POST for %s: %s" % (self.path, json_data))
-        post_path = self.path.lstrip('/')
-        if post_path not in self.game.POST_HANDLERS:
-            self.send_error(HTTPStatus.NOT_FOUND, "POST endpoint not found")
-            return
+
+        return_code, data = FIB_GAME.handle_POST(self.path, json_data)
+        logging.debug("POST handler returned %s and %s" % (RETURN_CODES_TO_NAMES[return_code], data))
 
         self.send_response(HTTPStatus.OK)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
 
-        # send reply JSON
-        reply = self.game.POST_HANDLERS[post_path](json_data)
-        logging.debug(reply)
-        self.wfile.write(json.dumps(reply).encode('utf-8'))
+        reply_json = {POST_RETURN_CODE: return_code}
+
+        if return_code in (POST_INTERNAL_ERROR, POST_VALIDATION_ERROR, POST_ENDPOINT_NOT_FOUND):
+            reply_json[POST_ERROR_MESSAGE] = data
+        elif return_code == POST_REDIRECT:
+            if not data.startswith('/'):
+                data = '/' + data
+            reply_json[POST_LOCATION] = data
+        elif return_code == POST_REPLY:
+            reply_json[POST_DATA] = data
+        else:
+            raise Exception("Unexpected return code %d from POST handler" % return_code)
+
+        self.wfile.write(json.dumps(reply_json).encode('utf-8'))
 
 
     def send_head(self):
@@ -95,10 +106,18 @@ class HorribleHTTPRequestHandler(BaseHTTPRequestHandler):
         
         page_path = os.path.abspath(os.path.join(SITE_FOLDER_PATH, page_path))
 
+        # test for folder traversal attempts
         if not page_path.startswith(SITE_FOLDER_PATH):
             logging.ERROR("URL path %s not resolved" % self.path)
             self.send_error(HTTPStatus.NOT_FOUND, "File not found")
             return None
+
+        # if a GET request path has no extension - try
+        # to resolve it by appending .html
+        if (not os.path.isfile(page_path) and
+                len(os.path.splitext(page_path)[1]) == 0 and 
+                os.path.isfile(page_path + '.html')):
+            page_path += '.html'
 
         try:
             f = open(page_path, 'rb')
