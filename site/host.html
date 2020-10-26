@@ -45,17 +45,19 @@
 
 
 <script src="fib_shared.js"> </script>
+
 <script>
 
 // TODO validate input (name is not empty, rounds and timer length are positive integers
 async function host_game(){
-  response = await doPost('/host',
+  // no need for a response - will be redirected
+  await doPost('/host',
   {
     'name': document.getElementById("name").value,
     'rounds': document.getElementById("rounds").value,
     'timer': document.getElementById("timer").value
   },
-  "error_label")
+  "error_label");
 }
 
 

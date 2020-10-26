@@ -22,7 +22,7 @@ SITE_FOLDER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), SITE
 PATH_ALIASES = {'/': 'host.html'}
 
 # global game instance
-FIB_GAME = FibGame()
+FIB_GAME = FibGame(r"D:\dev\fibbage-online\content\Fibbage XL (steam)\content")
 
 POST_RETURN_CODE = "return_code"
 POST_LOCATION = "location"
@@ -95,9 +95,13 @@ class HorribleHTTPRequestHandler(BaseHTTPRequestHandler):
         and must be closed by the caller under all circumstances), or
         None, in which case the caller has nothing further to do.
         """
+        page_path = self.path
+
+        # ignore everything after # in GET/HEAD requests
+        if '#' in page_path:
+            page_path = page_path[:page_path.index('#')]
 
         # self.path is what comes after the host (the first / and everything that comes after it)
-        page_path = self.path
         if page_path in PATH_ALIASES:
             page_path = PATH_ALIASES[page_path]
 
@@ -223,7 +227,11 @@ def main():
 
     with HTTPServer((SERVER_ADDRESS, PORT), HorribleHTTPRequestHandler) as httpd:
         print("serving at port", PORT)
-        httpd.serve_forever()
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("Bye")
+            return
 
 if "__main__" == __name__:
     main()

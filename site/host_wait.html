@@ -1,10 +1,85 @@
 <!doctype html>
 <html>
   <head>
+    <link href="https://fonts.googleapis.com/css2?family=Arvo:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sigmar+One&display=swap" rel="stylesheet">
+    <link href="shared.css" rel="stylesheet" >
     <title>Fibbage Online!</title>
   </head>
-  <body >
-    You're the host, waiting for other players :)
+  <body onload=onFormLoad()>
+    <div class="main">
+      <h2 class="page_title_h2">Players in game:</h2>
+
+      <div id="players">
+        <!-- will be filled in JS below -->
+      </div>
+
+      <button class="zurb_button" onClick="startGame()"> Everybody's in </button>
+      <br/><br/><br/>
+      <label class="label_text">URL to join:</label>
+      <br/>
+      <label class="label_text" id="join_url"></label>
+      <br/>
+      <button class="zurb_button" onClick="copyURL()"> Copy URL </button>
+      <br/><br/><br/>
+      <label class="label_text" id="error_label"></label>
+
+    </div>
+    
   </body>
+
+
 <script src="fib_shared.js">  </script>
+
+<script>
+
+var g_pollingIntervalId = setInterval(pollPlayers, 2000);
+
+  async function onFormLoad()
+  {
+    document.getElementById("join_url").innerText = window.location.origin + '/join';
+  }
+
+  async function pollPlayers()
+  {
+    let player_names = await doPost('/list_players',
+    {},
+    "error_label");
+
+    if (player_names == null)
+    {
+      return;
+    }
+
+    console.log("PLAYERS: " + JSON.stringify(player_names));
+    let html_content = "";
+
+    for (let i = 0; i < player_names.length; ++i)
+    {
+      html_content += '<label class="label_text">&#8226; ';
+      html_content += player_names[i];
+      html_content += '</label><br/>';
+    }
+
+    document.getElementById("players").innerHTML = html_content;
+  }
+
+  async function startGame()
+  {
+    console.log("STARTING GAME");
+
+    await doPost('/start',
+      {
+        "id": getIdFromCurrentURL()
+      },
+      "error_label"
+    );
+  }
+
+  function copyURL()
+  {
+    navigator.clipboard.writeText(document.getElementById("join_url").innerText);
+  }
+
+</script>
 </html>

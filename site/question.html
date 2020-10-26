@@ -3,19 +3,218 @@
   <head>
   <link href="https://fonts.googleapis.com/css2?family=Arvo:wght@700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Sigmar+One&display=swap" rel="stylesheet">
-  <link href="question.css" rel="stylesheet" >
-    <title>Question Page!</title>
+  <link href="shared.css" rel="stylesheet" >
+    <title>Enter your answer</title>
   </head>
-  <body onload="start()">
+  <body onload="onFormLoad()">
     <div class="main">
-	  <h2 id="question_container">loading question...</h2>
-	  <form id="frm_answer" action="javascript:;">
-		  <p id="enter_a_lie"> ENTER A LIE! </p>
-		  <input id="input_lie" onKeyPress="return enter_send_form(event, this)"><br>
-	  </form>
-	  <button id="lie_for_me" onClick="lie_for_me()"> LIE FOR ME </button><br>
-	  <p id="countdown" style="font-size:40px"> 30 </p>
-	</div>
+      <h2 id="question_container" class="page_title_h2"></h2>
+
+      <div id="input_section">
+
+        <label class="label_text"> Enter your answer:</label>
+        <br/>
+
+        <input class="input_style" id="input_lie" size=40 onKeyPress="onEnterKey(event)">
+        <br/>
+
+        <button class="zurb_button" id="btn_submit" style="width:300px" onClick="submitManualFib()"> Submit answer </button>
+        <br/>
+        <br/>
+
+        <button class="zurb_button" id="lie_for_me" style="width:300px; color: #4bd814; " onClick="lieForMe()"> Lie for me </button>
+        <br/>
+
+      </div>
+
+      <p id="countdown" style="font-size:40px"></p>
+
+      <br/><br/><br/>
+      <label class="label_text" id="error_label"></label>
+	  </div>
   </body>
-<script src="question.js"> </script>
+
+<script src="fib_shared.js">  </script>
+<script>
+/*
+  - if user submits a fib (Enter OR button press) - and it's validated - it's sent
+    - if not - error message
+  - if the time runs out - a random suggestion is sent
+  - if the user presses Lie For Me they get to choose one of a few possible suggestions (let's say at most three random)
+*/
+
+let suggestions = [];
+let alternateSpellings = [];
+let countdownTimer = null;
+let timerRemaining = 0;
+let answerSubmitted = false;
+
+
+async function onFormLoad()
+{
+  let question_json = await doPost('/get_current_question', {}, 'error_label');
+
+  if (question_json === null)
+  {
+    return;
+  }
+
+  for (let field of question_json['fields'])
+  {
+    if ((field['n'] === 'QuestionText') && ('v' in field))
+    {
+      document.getElementById('question_container').innerHTML = field['v'].replace("<BLANK>", "______");
+    }
+    else if ((field['n'] === 'Suggestions') && ('v' in field))
+    {
+      suggestions = field['v'].split(',');
+    }
+    else if ((field['n'] === 'AlternateSpellings') && ('v' in field))
+    {
+      for (alternateSpelling of field['v'].split(','))
+      {
+        alternateSpellings.push(alternateSpelling.toLowerCase());
+      }
+    }
+    else if ((field['n'] === 'CorrectText') && ('v' in field))
+    {
+      // treat this as another alternate spelling
+      alternateSpellings.push(field['v'].toLowerCase());
+    }
+    else if ((field['n'] === 'QuestionAudio') && ('v' in field))
+    {
+      // TODO find and play audio file
+    }
+  }
+
+  console.log("SUGGESTIONS: " + suggestions);
+  console.log("ALTERNATE SPELLINGS: " + alternateSpellings);
+
+  timerRemaining = Number(question_json['timer_length']);
+  document.getElementById('countdown').innerText = timerRemaining;
+  countdownTimer = setInterval(updateTimer, 1000);
+}
+
+
+function isValidLie(lie)
+{
+  return !(alternateSpellings.includes(lie.toLowerCase()));
+}
+
+
+async function submitManualFib()
+{
+  if (answerSubmitted)
+  {
+    return;
+  }
+
+  let fib = document.getElementById('input_lie').value;
+  if (!isValidLie(fib))
+  {
+    document.getElementById('error_label').innerText = "You cannot lie the truth!";
+    return;
+  }
+
+  answerSubmitted = true; 
+  clearInterval(countdownTimer);
+  document.getElementById('countdown').innerText = "";
+  document.getElementById('error_label').innerText = "";
+  document.getElementById('input_section').innerHTML = "";
+
+  await doPost('/fib',
+  {
+    'id': getIdFromCurrentURL(),
+    'fib': fib,
+    'fib_type': FIB_TYPES.FIB_USER_CREATED
+  },
+  'error_label');
+}
+
+
+async function updateTimer()
+{
+  timerRemaining -= 1;
+  document.getElementById('countdown').innerText = timerRemaining;
+
+  if (timerRemaining <= 0)
+  {
+    clearInterval(countdownTimer);
+
+    if (answerSubmitted)
+    {
+      return;
+    }
+
+    answerSubmitted = true;
+    //document.getElementById('countdown').innerText = "";
+    document.getElementById('error_label').innerText = "";
+    document.getElementById('input_section').innerHTML = "";
+
+    let suggestedFib = suggestions[Math.floor(Math.random() * suggestions.length)];
+    
+    await doPost('/fib',
+    {
+      'id': getIdFromCurrentURL(),
+      'fib': suggestedFib,
+      'fib_type': FIB_TYPES.FIB_SUGGESTION
+    },
+    'error_label');
+  }
+}
+
+
+function onEnterKey(e) {
+	if (e.key === 'Enter' || e.keyCode === 13)
+  {
+    submitManualFib();
+  }
+}
+
+
+function lieForMe()
+{
+  let displayed_suggestions = [];
+
+  document.getElementById('input_section').innerHTML = "<label class='label_text'>Choose a lie:</label><br/><br/>";
+  shuffleArray(suggestions);
+
+  for (i = 0; i < Math.min(2, suggestions.length); ++i)
+  {
+    displayed_suggestions.push(suggestions[i]);
+  }
+
+  // console.log(displayed_suggestions);
+
+  for (suggestion of displayed_suggestions)
+  {
+    document.getElementById('input_section').innerHTML += ("<button class='zurb_button' onClick=\"submitAutoFib('" + suggestion + "')\">" + suggestion + "</button><br/><br/>");
+  }
+}
+
+
+async function submitAutoFib(fib)
+{
+  if (answerSubmitted)
+  {
+    return;
+  }
+
+  answerSubmitted = true; 
+  clearInterval(countdownTimer);
+  document.getElementById('countdown').innerText = "";
+  document.getElementById('error_label').innerText = "";
+  document.getElementById('input_section').innerHTML = "";
+
+  await doPost('/fib',
+  {
+    'id': getIdFromCurrentURL(),
+    'fib': fib,
+    'fib_type': FIB_TYPES.FIB_SUGGESTION
+  },
+  'error_label');
+}
+
+</script>
+
 </html>

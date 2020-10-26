@@ -4,14 +4,37 @@ async function test_post() {
     document.body.innerHTML = JSON.stringify(response);
   }
 
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+
+  function getIdFromCurrentURL()
+  {
+    return window.location.hash.substr(1);
+  }
+
   // matching fib_game.py
-  const POST_RETURN_CODES = {
-    POST_REPLY: 0,
-    POST_REDIRECT: 1,
-    POST_VALIDATION_ERROR: 2,
-    POST_INTERNAL_ERROR: 3,
-    POST_ENDPOINT_NOT_FOUND: 4
-}
+const POST_RETURN_CODES = {
+  POST_REPLY: 0,
+  POST_REDIRECT: 1,
+  POST_VALIDATION_ERROR: 2,
+  POST_INTERNAL_ERROR: 3,
+  POST_ENDPOINT_NOT_FOUND: 4
+};
+
+const GAME_STATES = {
+  GAME_PREPARING: 'preparing',
+  GAME_FIBBING: 'fibbing',
+  GAME_CHOOSING: 'choosing',
+  GAME_DISPLAYING: 'displaying'
+};
+
+const FIB_TYPES = {
+  FIB_USER_CREATED: 0,
+  FIB_SUGGESTION: 1
+};
 
 /*
   Sends JSON to the specified URL via POST,
@@ -28,7 +51,6 @@ async function test_post() {
     body_content = JSON.stringify(data);
     console.log("sending POST to " + url_path + " with " + body_content);
 
-
     let response = await fetch(url_path, {
       method: 'POST',
       headers: {
@@ -39,9 +61,9 @@ async function test_post() {
 
     let response_dictionary = await response.json();
 
-    console.log("Received POST reply with " + JSON.stringify(response_dictionary))
+    console.log("Received POST reply with " + JSON.stringify(response_dictionary));
 
-    let return_code = Number(response_dictionary["return_code"])
+    let return_code = Number(response_dictionary["return_code"]);
 
     if (return_code == POST_RETURN_CODES.POST_REPLY)
     {
@@ -49,16 +71,23 @@ async function test_post() {
     }
     else if (return_code == POST_RETURN_CODES.POST_REDIRECT)
     {
-      let location = response_dictionary["location"]
-      console.log("REDIRECT to " + location)
-      window.location.pathname = location
-      // TODO redirect
+      let location = response_dictionary["location"];
+      //console.log("REDIRECT to " + location);
+      window.location = location;
     }
     else if (error_label_id.length > 0)
     {
-      console.log("ERROR MESSAGE: " + response_dictionary["error_message"])
-      document.getElementById(error_label_id).textContent = response_dictionary["error_message"]
+      //console.log("ERROR MESSAGE: " + response_dictionary["error_message"]);
+      document.getElementById(error_label_id).textContent = "ERROR: " + response_dictionary["error_message"];
     }
+
+    return null;
   }
 
-  
+/* Randomize array in-place using Durstenfeld shuffle algorithm */
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+  }
+}

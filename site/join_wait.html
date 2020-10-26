@@ -1,9 +1,78 @@
 <!doctype html>
 <html>
   <head>
+    <link href="https://fonts.googleapis.com/css2?family=Arvo:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sigmar+One&display=swap" rel="stylesheet">
+    <link href="shared.css" rel="stylesheet" >
     <title>Fibbage Online!</title>
   </head>
-  <body onload=start()>
+  <body onload=onFormLoad()>
+    <div class="main">
+      <h2 class="page_title_h2">Players in game:</h2>
+
+      <div id="players">
+        <!-- will be filled in JS below -->
+      </div>
+      <br/><br/><br/>
+      <label class="label_text" id="error_label"></label>
+
+    </div>
+    
   </body>
+
+
 <script src="fib_shared.js">  </script>
+
+<script>
+
+var g_pollingIntervalId = setInterval(pollPlayersAndGameState, 2000);
+
+  async function onFormLoad()
+  {    
+    //pollPlayersAndGameState();
+  }
+
+  async function pollPlayersAndGameState()
+  {
+    // TODO poll game state
+    let game_state = await doPost('/get_game_state',
+    {},
+    "error_label");
+
+    if (game_state === null)
+    {
+      return;
+    }
+
+    if (game_state === GAME_STATES.GAME_FIBBING)
+    {
+      // move to the next step
+      console.log("REDIRECTING!");
+      clearInterval(g_pollingIntervalId);
+      window.location = '/question#' + getIdFromCurrentURL();
+    }
+
+    let player_names = await doPost('/list_players',
+    {},
+    "error_label");
+
+    if (player_names === null)
+    {
+      return;
+    }
+
+    // console.log("PLAYERS: " + JSON.stringify(player_names));
+    let html_content = "";
+
+    for (let i = 0; i < player_names.length; ++i)
+    {
+      html_content += '<label class="label_text">&#8226; ';
+      html_content += player_names[i];
+      html_content += '</label><br/>';
+    }
+
+    document.getElementById("players").innerHTML = html_content;
+  }
+
+</script>
 </html>
