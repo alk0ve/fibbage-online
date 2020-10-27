@@ -15,6 +15,10 @@ GAME_DISPLAYING = 'displaying'
 (POST_REPLY, POST_REDIRECT, POST_VALIDATION_ERROR, POST_INTERNAL_ERROR,
  POST_ENDPOINT_NOT_FOUND) = list(range(5))
 
+# Fibbage adds a fib if there are only two players,
+# so there is a minimum of 3 fibs + 1 answer
+MIN_ANSWERS = 3
+
 # types of fibs - user-created or automatic suggestions
 FIB_USER_CREATED, FIB_SUGGESTION = list(range(2))
 
@@ -28,6 +32,18 @@ RETURN_CODES_TO_NAMES = {POST_REPLY: "POST_REPLY",
 def random_hex_id(len_bytes=4):
     format_str = "%%0%dx" % (len_bytes * 2)
     return (format_str % random.randrange(2 ** (8 * len_bytes))).upper()
+
+
+def enrich_question_json(question_json):
+    question_fields = question_json['fields']
+
+    for question_field in question_fields:
+        if question_field['n'] == 'Suggestions' and 'v' in question_field:
+            question_json['Suggestions'] = question_field['v'].split(',')
+        elif question_field['n'] == 'CorrectText' and 'v' in question_field:
+            question_json['CorrectText'] = question_field['v']
+
+    return question_json
 
 
 class FibGame(object):
@@ -62,7 +78,7 @@ class FibGame(object):
         self.num_rounds = None
         self.current_round = 0
         self.timer_length = None
-        self.question_folders = []
+        self.question_jsons = []
         
         # hex ID to (answer, answer type)
         self.current_round_answers = {}
@@ -117,7 +133,11 @@ class FibGame(object):
 
         # TODO choose a Final Fibbage question as well
         question_folders = glob.glob(os.path.join(self.fib_content_path, 'fibbageshortie', '*'))
-        self.question_folders = random.sample(question_folders, self.num_rounds)
+        question_folders = random.sample(question_folders, self.num_rounds)
+
+        for question_folder in question_folders:
+            with open(os.path.join(question_folder, "data.jet"), 'r') as f:
+                self.question_jsons.append(enrich_question_json(json.load(f)))
 
         return POST_REDIRECT, ('host_wait#%s' % self.host_id)
 
@@ -153,16 +173,46 @@ class FibGame(object):
 
 
     def handle_POST_get_current_question(self, data):
-        with open(os.path.join(self.question_folders[self.current_round], "data.jet"), 'r') as f:
-            question_json = json.load(f)
+        question_json = self.question_jsons[self.current_round]
         
         question_json['timer_length'] = self.timer_length
 
         return POST_REPLY, question_json
 
 
+    def pad_with_fibs(self):
+        # add more auto-fibs until there's enough, but
+        # keep in mind that the others might be fibs as well
+
+        auto_suggestion_count = sum(map(lambda x: x[1] == FIB_SUGGESTION, self.current_round_answers.values()))
+        suggestions = self.question_jsons[self.current_round]['Suggestions']
+
+        if ((MIN_ANSWERS - len(self.current_round_answers.values())) < (len(suggestions) - auto_suggestion_count)):
+            # if we're here this means there are enough suggestions
+            while len(self.current_round_answers) < MIN_ANSWERS:
+                new_suggestion = random.sample(self.question_jsons[self.current_round]['Suggestions'], 1)
+                answers = map(lambda x:x[0], self.current_round_answers.values())
+
+                while new_suggestion in answers:
+                    new_suggestion = random.sample(self.question_jsons[self.current_round]['Suggestions'], 1)
+                
+                # insert using new random hex IDs (since the fib is automatic this shouldn't matter)
+                new_hex_id = random_hex_id()
+                while new_hex_id in self.current_round_answers:
+                    new_hex_id = random_hex_id()
+                self.current_round_answers[new_hex_id] = (new_suggestion, FIB_SUGGESTION)
+
+
     def handle_POST_fib(self, data):
         self.current_round_answers[data['id']] = (data['fib'], int(data['fib_type']))
+
+        if len(self.current_round_answers) == len(self.players):
+            # all answers accepted
+
+            if len(self.current_round_answers) < MIN_ANSWERS:
+                self.pad_with_fibs()
+            
+            self.state = GAME_CHOOSING
 
         return POST_REPLY, {}
 

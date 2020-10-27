@@ -6,7 +6,7 @@
     <link href="shared.css" rel="stylesheet" >
     <title>Fibbage Online!</title>
   </head>
-  <body onload=onFormLoad()>
+  <body onload=onPageLoad()>
     <div class="main">
       <h2 class="page_title_h2">Players in game:</h2>
 
@@ -35,7 +35,7 @@
 
 var g_pollingIntervalId = setInterval(pollPlayers, 2000);
 
-  async function onFormLoad()
+  async function onPageLoad()
   {
     document.getElementById("join_url").innerText = window.location.origin + '/join';
   }

@@ -6,7 +6,7 @@
     <link href="shared.css" rel="stylesheet" >
     <title>Fibbage Online!</title>
   </head>
-  <body onload=onFormLoad()>
+  <body onload=onPageLoad()>
     <div class="main">
       <h2 class="page_title_h2">Players in game:</h2>
 
@@ -27,14 +27,13 @@
 
 var g_pollingIntervalId = setInterval(pollPlayersAndGameState, 2000);
 
-  async function onFormLoad()
+  async function onPageLoad()
   {    
     //pollPlayersAndGameState();
   }
 
   async function pollPlayersAndGameState()
   {
-    // TODO poll game state
     let game_state = await doPost('/get_game_state',
     {},
     "error_label");

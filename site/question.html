@@ -6,7 +6,7 @@
   <link href="shared.css" rel="stylesheet" >
     <title>Enter your answer</title>
   </head>
-  <body onload="onFormLoad()">
+  <body onload="onPageLoad()">
     <div class="main">
       <h2 id="question_container" class="page_title_h2"></h2>
 
@@ -49,8 +49,9 @@ let countdownTimer = null;
 let timerRemaining = 0;
 let answerSubmitted = false;
 
+var g_pollingIntervalId = setInterval(pollGameState, 2000);
 
-async function onFormLoad()
+async function onPageLoad()
 {
   let question_json = await doPost('/get_current_question', {}, 'error_label');
 
@@ -213,6 +214,28 @@ async function submitAutoFib(fib)
     'fib_type': FIB_TYPES.FIB_SUGGESTION
   },
   'error_label');
+}
+
+async function pollGameState()
+{
+  let game_state = await doPost('/get_game_state',
+    {},
+    "error_label");
+
+    if (game_state === null)
+    {
+      return;
+    }
+
+    console.log("GAME STATE: " + game_state);
+
+    if (game_state === GAME_STATES.GAME_CHOOSING)
+    {
+      // move to the next step
+      console.log("REDIRECTING!");
+      clearInterval(g_pollingIntervalId);
+      window.location = '/pick_answer#' + getIdFromCurrentURL();
+    }
 }
 
 </script>
