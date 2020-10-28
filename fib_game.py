@@ -15,9 +15,11 @@ GAME_DISPLAYING = 'displaying'
 (POST_REPLY, POST_REDIRECT, POST_VALIDATION_ERROR, POST_INTERNAL_ERROR,
  POST_ENDPOINT_NOT_FOUND) = list(range(5))
 
-# Fibbage adds a fib if there are only two players,
-# so there is a minimum of 3 fibs + 1 answer
-MIN_ANSWERS = 3
+# Fibbage adds fibs if there are only two or three players,
+# so there is a minimum of 3 fibs + 1 answer displayed for each
+# player, but each player doesn't see his own answer, so you
+# need a total of at least 4 fibs 
+MIN_ANSWERS = 4
 
 # types of fibs - user-created or automatic suggestions
 FIB_USER_CREATED, FIB_SUGGESTION = list(range(2))
@@ -204,6 +206,10 @@ class FibGame(object):
 
 
     def handle_POST_fib(self, data):
+        if data['id'] in self.current_round_answers:
+            # ignore any answer after the first one
+            return
+        
         self.current_round_answers[data['id']] = (data['fib'], int(data['fib_type']))
 
         if len(self.current_round_answers) == len(self.players):

@@ -1,12 +1,22 @@
 <!doctype html>
 <html>
   <head>
-  <link href="https://fonts.googleapis.com/css2?family=Arvo:wght@700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Sigmar+One&display=swap" rel="stylesheet">
-  <link href="shared.css" rel="stylesheet" >
+    <link href="https://fonts.googleapis.com/css2?family=Arvo:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sigmar+One&display=swap" rel="stylesheet">
+    <link href="shared.css" rel="stylesheet" >
+    <link rel="stylesheet" href="flip/flip.min.css">
     <title>Enter your answer</title>
   </head>
   <body onload="onPageLoad()">
+    <style>
+      .tick {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+        font-size:7em;
+        margin:0 .25em;
+      }
+    </style>
+
+
     <div class="main">
       <h2 id="question_container" class="page_title_h2"></h2>
 
@@ -27,14 +37,21 @@
 
       </div>
 
-      <p id="countdown" style="font-size:40px"></p>
+      <br/><br/><br/>
+      
+      <div class="tick" id="tick_wrapper" data-did-init="setupFlip">
+        <div data-repeat="true">
+          <span data-view="flip"></span>
+        </div>
+      </div>
 
       <br/><br/><br/>
       <label class="label_text" id="error_label"></label>
 	  </div>
   </body>
 
-<script src="fib_shared.js">  </script>
+<script src="fib_shared.js"></script>
+<script src="flip/flip.min.js"></script>
 <script>
 /*
   - if user submits a fib (Enter OR button press) - and it's validated - it's sent
@@ -48,8 +65,14 @@ let alternateSpellings = [];
 let countdownTimer = null;
 let timerRemaining = 0;
 let answerSubmitted = false;
+let g_tick = null;
 
 var g_pollingIntervalId = setInterval(pollGameState, 2000);
+
+function setupFlip(tick)
+{
+  g_tick = tick;
+}
 
 async function onPageLoad()
 {
@@ -92,7 +115,7 @@ async function onPageLoad()
   console.log("ALTERNATE SPELLINGS: " + alternateSpellings);
 
   timerRemaining = Number(question_json['timer_length']);
-  document.getElementById('countdown').innerText = timerRemaining;
+  document.getElementById('tick_wrapper').setAttribute('data-value', timerRemaining);
   countdownTimer = setInterval(updateTimer, 1000);
 }
 
@@ -119,7 +142,7 @@ async function submitManualFib()
 
   answerSubmitted = true; 
   clearInterval(countdownTimer);
-  document.getElementById('countdown').innerText = "";
+  document.getElementById('tick_wrapper').innerHTML = "";
   document.getElementById('error_label').innerText = "";
   document.getElementById('input_section').innerHTML = "";
 
@@ -135,8 +158,8 @@ async function submitManualFib()
 
 async function updateTimer()
 {
+  g_tick.value--; // updates the clock
   timerRemaining -= 1;
-  document.getElementById('countdown').innerText = timerRemaining;
 
   if (timerRemaining <= 0)
   {
@@ -148,7 +171,7 @@ async function updateTimer()
     }
 
     answerSubmitted = true;
-    //document.getElementById('countdown').innerText = "";
+    document.getElementById('tick_wrapper').innerHTML = "";
     document.getElementById('error_label').innerText = "";
     document.getElementById('input_section').innerHTML = "";
 
@@ -203,7 +226,7 @@ async function submitAutoFib(fib)
 
   answerSubmitted = true; 
   clearInterval(countdownTimer);
-  document.getElementById('countdown').innerText = "";
+  document.getElementById('tick_wrapper').innerHTML = "";
   document.getElementById('error_label').innerText = "";
   document.getElementById('input_section').innerHTML = "";
 
