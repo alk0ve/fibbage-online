@@ -1,9 +1,114 @@
 <!doctype html>
 <html>
   <head>
+    <link href="https://fonts.googleapis.com/css2?family=Arvo:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sigmar+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="flip/flip.min.css">
+    <link href="shared.css" rel="stylesheet" >
+	<link href="answers.css" rel="stylesheet" >
     <title>Fibbage Online!</title>
   </head>
-  <body onload=start()>
+  <body onload=onPageLoad()>
+    <div class="main">
+      <h2 id="question_container" class="page_title_h2">Some text bla bla </h2>
+	  <div class="wrapper wrapper_2" id="answers">
+		  <div class="input_style answers" id="answer1">first lie </div>
+		  <div class="input_style answers" id="answer2">second lie</div>
+		  <div class="input_style answers" id="answer3">third lie</div>
+		  <div class="input_style answers" id="answer4">fourth lie</div>
+	  </div>
+	</div>
   </body>
 <script src="fib_shared.js">  </script>
+<script>
+
+async function animate_answer(answer_index, voters, truth=false, auto_fib=false, player_fib=false, creator="")
+{
+	let current_answer = null;
+	// do animation (now seeing one answer)
+	for (let answer of document.getElementsByClassName("answers"))
+	{	
+		// change the answer div to be bigger (and in the center)
+		if (answer.id == "answer"+answer_index){
+			current_answer = answer;
+			let answerBoundingRect = answer.getBoundingClientRect();
+			let answerRect = answer.getClientRects()
+			let translate_x = window.innerWidth/2 - answerBoundingRect.x - answerRect[0].width /2;
+			let translate_y = window.innerHeight/2 - answerBoundingRect.y - answerRect[0].height /2;
+			answer.style.transform = "translate(" + translate_x + "px," + translate_y + "px) scale(2)";
+		} 
+		// change the other answers to be smaller until not visible
+		else{
+		    answer.style.transition = "transform 1s , opacity 0.2s";
+			answer.style.transform = "scale(0)";
+			answer.style.opacity = 0;
+			answer.style.color = "black"
+		}
+	}
+	await sleep(1000);
+	
+	// show the voters
+	let voters_div = "";
+	for (let voter of voters){
+		voters_div = voters_div + "<div class='voter'>" + voter + "</div>";
+	}
+	
+	current_answer.innerHTML = current_answer.innerHTML + voters_div;
+
+	// show if someone lie/our lie/truth
+	// return to the original state
+	for (let answer of document.getElementsByClassName("answers"))
+	{	
+		// change the answer div to be bigger (and in the center)
+		if (answer.id == "answer"+answer_index){
+			answer.style.transform = "";
+		} 
+		// change the other answers to be smaller until not visible
+		else{
+			answer.style.transition = "transform 1s , opacity 2.5s";
+			answer.style.transform = "";
+			answer.style.opacity = 1;
+			answer.style.color = "white"
+		}
+	}
+	await sleep(1500);
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function onPageLoad()
+{
+	// get answers json
+	let answers = [];
+	// parse possible answers
+	// show answers (create divs) - only if the answer is the truth/has voters
+	// start animation of every answer
+	/*
+	for (let answer of answers){
+		await animate_answer(1, ["Elina"]);
+	}
+	*/
+	let voters = ["Elina"];
+	await animate_answer(1, voters);
+	await animate_answer(2, voters);
+	await animate_answer(3, voters);
+	await animate_answer(4, voters);
+	
+	
+	
+	
+	/*
+	let answers_json = await doPost('/get_current_question', {}, 'error_label');
+	
+	if (answers_json === null)
+	{
+		return;
+	}
+	*/
+	
+}
+
+</script>
 </html>

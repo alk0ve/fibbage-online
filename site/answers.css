@@ -1,0 +1,52 @@
+.wrapper {
+	margin: auto;
+	width: 800px;
+	height: 250px;
+	display: block;
+}
+
+.wrapper_2 > div {
+	width: 40%;
+	height: 30%;
+}
+
+.wrapper_3 > div {
+	width: 20%;
+	height: 30%;
+}
+
+.wrapper > div {
+	position: relative;
+	background-color: #000;
+	color: #fff;
+	text-align: center;
+	border-radius: 5px;
+	padding: 20px;
+	font-size: 200%;
+	margin-bottom: 20px;
+	display: inline-block;
+	opacity: 1;
+    transition: transform 1s , opacity 0.2s;
+}
+
+
+// do voters "grid" with flex
+.voter.wrapper {
+}
+
+.voter {
+	display: inline-block;
+	font-size: 50%;
+	position: absolute;
+	bottom: -10px;
+	padding: 5px 0;
+	width: 110px;
+	height: 35px;
+	border-radius: 10px;
+	border-color: black;
+	border-style: solid;
+	border-width:  2px;
+	color: black;
+	text-align: center;
+	background-color: #86C691;
+}
