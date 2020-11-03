@@ -108,20 +108,31 @@ class HorribleHTTPRequestHandler(BaseHTTPRequestHandler):
         # convert slashes, remove leading shash
         page_path = page_path.replace('/', os.path.sep).lstrip(os.path.sep)
         
-        page_path = os.path.abspath(os.path.join(SITE_FOLDER_PATH, page_path))
+        allow_caching = True
 
-        # test for folder traversal attempts
-        if not page_path.startswith(SITE_FOLDER_PATH):
-            logging.ERROR("URL path %s not resolved" % self.path)
-            self.send_error(HTTPStatus.NOT_FOUND, "File not found")
-            return None
+        # make sure this isn't a round-specific GET request
+        game_supplied_path = FIB_GAME.handle_GET(page_path)
+        if game_supplied_path is not None:
+            page_path = game_supplied_path
+            # ask browser to never cache these, as the content changes
+            # but the URL remains the same
+            allow_caching = False
+        else:
+            # try to resolve into the site folder
+            page_path = os.path.abspath(os.path.join(SITE_FOLDER_PATH, page_path))
 
-        # if a GET request path has no extension - try
-        # to resolve it by appending .html
-        if (not os.path.isfile(page_path) and
-                len(os.path.splitext(page_path)[1]) == 0 and 
-                os.path.isfile(page_path + '.html')):
-            page_path += '.html'
+            # test for folder traversal attempts
+            if not page_path.startswith(SITE_FOLDER_PATH):
+                logging.ERROR("URL path %s not resolved" % self.path)
+                self.send_error(HTTPStatus.NOT_FOUND, "File not found")
+                return None
+
+            # if a GET request path has no extension - try
+            # to resolve it by appending .html
+            if (not os.path.isfile(page_path) and
+                    len(os.path.splitext(page_path)[1]) == 0 and 
+                    os.path.isfile(page_path + '.html')):
+                page_path += '.html'
 
         try:
             f = open(page_path, 'rb')
@@ -131,9 +142,11 @@ class HorribleHTTPRequestHandler(BaseHTTPRequestHandler):
 
         try:
             fs = os.fstat(f.fileno())
+
             # Use browser cache if possible
             if ("If-Modified-Since" in self.headers
-                    and "If-None-Match" not in self.headers):
+                    and "If-None-Match" not in self.headers
+                    and allow_caching):
                 # compare If-Modified-Since and time of last file modification
                 try:
                     ims = email.utils.parsedate_to_datetime(
@@ -159,13 +172,14 @@ class HorribleHTTPRequestHandler(BaseHTTPRequestHandler):
                             f.close()
                             return None
 
-            ctype = self.guess_type(page_path)
+            content_type = self.guess_type(page_path)
 
             self.send_response(HTTPStatus.OK)
-            self.send_header("Content-type", ctype) # restricted to only
+            self.send_header("Content-type", content_type) # restricted to only
             self.send_header("Content-Length", str(fs[6]))
-            self.send_header("Last-Modified",
-                self.date_time_string(fs.st_mtime))
+            if allow_caching:
+                self.send_header("Last-Modified",
+                    self.date_time_string(fs.st_mtime))
             self.end_headers()
             return f
         except:

@@ -23,21 +23,21 @@
       <div id="input_section">
 
         <label class="label_text"> Enter your answer:</label>
-        <br/>
+        <br>
 
         <input class="input_style" id="input_lie" size=40 onKeyPress="onEnterKey(event)">
-        <br/>
+        <br>
 
         <button class="zurb_button" id="btn_submit" style="width:300px" onClick="submitManualFib()"> Submit answer </button>
-        <br/>
-        <br/>
+        <br>
+        <br>
 
         <button class="zurb_button" id="lie_for_me" style="width:300px; color: #4bd814; " onClick="lieForMe()"> Lie for me </button>
-        <br/>
+        <br>
 
       </div>
 
-      <br/><br/><br/>
+      <br><br><br>
       
       <div class="tick" id="tick_wrapper" data-did-init="setupFlip">
         <div data-repeat="true">
@@ -45,8 +45,11 @@
         </div>
       </div>
 
-      <br/><br/><br/>
+      <br><br><br>
       <label class="label_text" id="error_label"></label>
+      <audio id="audio">
+        <source type="audio/ogg">
+      </audio>
 	  </div>
   </body>
 
@@ -111,8 +114,12 @@ async function onPageLoad()
     }
   }
 
-  console.log("SUGGESTIONS: " + suggestions);
-  console.log("ALTERNATE SPELLINGS: " + alternateSpellings);
+  // console.log("SUGGESTIONS: " + suggestions);
+  // console.log("ALTERNATE SPELLINGS: " + alternateSpellings);
+
+  // play question audio
+  document.getElementById('audio').src = window.location.origin + '/question_audio';
+  document.getElementById('audio').play();
 
   timerRemaining = Number(question_json['timer_length']);
   document.getElementById('tick_wrapper').setAttribute('data-value', timerRemaining);
@@ -200,7 +207,7 @@ function lieForMe()
 {
   let displayed_suggestions = [];
 
-  document.getElementById('input_section').innerHTML = "<label class='label_text'>Choose a lie:</label><br/><br/>";
+  document.getElementById('input_section').innerHTML = "<label class='label_text'>Choose a lie:</label><br><br>";
   shuffleArray(suggestions);
 
   for (i = 0; i < Math.min(2, suggestions.length); ++i)
@@ -212,7 +219,7 @@ function lieForMe()
 
   for (suggestion of displayed_suggestions)
   {
-    document.getElementById('input_section').innerHTML += ("<button class='zurb_button' onClick=\"submitAutoFib('" + suggestion + "')\">" + suggestion + "</button><br/><br/>");
+    document.getElementById('input_section').innerHTML += ("<button class='zurb_button' onClick=\"submitAutoFib('" + suggestion + "')\">" + suggestion + "</button><br><br>");
   }
 }
 
@@ -250,7 +257,7 @@ async function pollGameState()
       return;
     }
 
-    console.log("GAME STATE: " + game_state);
+    // console.log("GAME STATE: " + game_state);
 
     if (game_state === GAME_STATES.GAME_CHOOSING)
     {

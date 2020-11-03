@@ -49,7 +49,7 @@ const FIB_TYPES = {
   async function doPost(url_path, data, error_label_id = "")
   {
     body_content = JSON.stringify(data);
-    console.log("sending POST to " + url_path + " with " + body_content);
+    // console.log("sending POST to " + url_path + " with " + body_content);
 
     let response = await fetch(url_path, {
       method: 'POST',
@@ -61,7 +61,7 @@ const FIB_TYPES = {
 
     let response_dictionary = await response.json();
 
-    console.log("Received POST reply with " + JSON.stringify(response_dictionary));
+    // console.log("Received POST reply with " + JSON.stringify(response_dictionary));
 
     let return_code = Number(response_dictionary["return_code"]);
 
@@ -72,12 +72,12 @@ const FIB_TYPES = {
     else if (return_code == POST_RETURN_CODES.POST_REDIRECT)
     {
       let location = response_dictionary["location"];
-      //console.log("REDIRECT to " + location);
+      console.log("REDIRECT to " + location);
       window.location = location;
     }
     else if (error_label_id.length > 0)
     {
-      //console.log("ERROR MESSAGE: " + response_dictionary["error_message"]);
+      console.log("ERROR MESSAGE: " + response_dictionary["error_message"]);
       document.getElementById(error_label_id).textContent = "ERROR: " + response_dictionary["error_message"];
     }
 

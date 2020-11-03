@@ -24,6 +24,12 @@ MIN_ANSWERS = 4
 # types of fibs - user-created or automatic suggestions
 FIB_USER_CREATED, FIB_SUGGESTION = list(range(2))
 
+# field names in .jet/JSON files
+JET_SUGGESTIONS = 'Suggestions'
+JET_QUESTION_AUDIO = 'QuestionAudio'
+JET_CORRECT_TEXT = 'CorrectText'
+
+
 RETURN_CODES_TO_NAMES = {POST_REPLY: "POST_REPLY",
                          POST_REDIRECT: "POST_REDIRECT",
                          POST_VALIDATION_ERROR: "POST_VALIDATION_ERROR",
@@ -36,14 +42,16 @@ def random_hex_id(len_bytes=4):
     return (format_str % random.randrange(2 ** (8 * len_bytes))).upper()
 
 
-def enrich_question_json(question_json):
+def process_question_json(question_json):
     question_fields = question_json['fields']
 
     for question_field in question_fields:
-        if question_field['n'] == 'Suggestions' and 'v' in question_field:
-            question_json['Suggestions'] = question_field['v'].split(',')
-        elif question_field['n'] == 'CorrectText' and 'v' in question_field:
-            question_json['CorrectText'] = question_field['v']
+        if question_field['n'] == JET_SUGGESTIONS and 'v' in question_field:
+            question_json[JET_SUGGESTIONS] = question_field['v'].split(',')
+        elif question_field['n'] == JET_CORRECT_TEXT and 'v' in question_field:
+            question_json[JET_CORRECT_TEXT] = question_field['v']
+        elif question_field['n'] == JET_QUESTION_AUDIO and 'v' in question_field:
+            question_json[JET_QUESTION_AUDIO] = question_field['v']
 
     return question_json
 
@@ -66,6 +74,11 @@ class FibGame(object):
             'get_round_results': ([], self.handle_POST_get_round_results)
         }
 
+        self.GET_HANDLERS = {
+            'question_audio': self.handle_GET_question_audio,
+            'answer_audio': self.handle_GET_answer_audio
+        }
+
         self.fib_content_path = fib_content_path
 
         self.reset_state()
@@ -81,9 +94,41 @@ class FibGame(object):
         self.current_round = 0
         self.timer_length = None
         self.question_jsons = []
+        self.question_folders = []
         
         # hex ID to (answer, answer type)
         self.current_round_answers = {}
+
+    # return either an absolute path, or None
+    def handle_GET(self, get_path):
+        if get_path not in self.GET_HANDLERS:
+            return None
+        
+        try:
+            # post_handler() should return a tuple of (type, data)
+            return self.GET_HANDLERS[get_path](get_path)
+        except:
+            traceback.print_exc()
+            return None
+
+    
+    def handle_GET_question_audio(self, _):
+        if self.state != GAME_FIBBING:
+            return None
+        
+        if JET_QUESTION_AUDIO not in self.question_jsons[self.current_round]:
+            return None
+
+        audio_file_name = self.question_jsons[self.current_round][JET_QUESTION_AUDIO] + '.ogg'
+        # print(os.path.join(self.question_folders[self.current_round], audio_file_name))
+        return os.path.join(self.question_folders[self.current_round], audio_file_name)
+
+
+    def handle_GET_answer_audio(self, _):
+        # TODO check state
+        # TODO add answer audio file name extraction to process_question_json()
+        # TODO extract answer audio file name, if present in JSON, otherwise return None
+        return None
 
 
     def handle_POST(self, post_path, json_data):
@@ -135,11 +180,11 @@ class FibGame(object):
 
         # TODO choose a Final Fibbage question as well
         question_folders = glob.glob(os.path.join(self.fib_content_path, 'fibbageshortie', '*'))
-        question_folders = random.sample(question_folders, self.num_rounds)
+        self.question_folders = random.sample(question_folders, self.num_rounds)
 
-        for question_folder in question_folders:
+        for question_folder in self.question_folders:
             with open(os.path.join(question_folder, "data.jet"), 'r') as f:
-                self.question_jsons.append(enrich_question_json(json.load(f)))
+                self.question_jsons.append(process_question_json(json.load(f)))
 
         return POST_REDIRECT, ('host_wait#%s' % self.host_id)
 
@@ -184,19 +229,19 @@ class FibGame(object):
 
     def pad_with_fibs(self):
         # add more auto-fibs until there's enough, but
-        # keep in mind that the others might be fibs as well
+        # keep in mind that the others might be auto-fibs as well
 
         auto_suggestion_count = sum(map(lambda x: x[1] == FIB_SUGGESTION, self.current_round_answers.values()))
-        suggestions = self.question_jsons[self.current_round]['Suggestions']
+        suggestions = self.question_jsons[self.current_round][JET_SUGGESTIONS]
 
         if ((MIN_ANSWERS - len(self.current_round_answers.values())) < (len(suggestions) - auto_suggestion_count)):
             # if we're here this means there are enough suggestions
             while len(self.current_round_answers) < MIN_ANSWERS:
-                new_suggestion = random.sample(self.question_jsons[self.current_round]['Suggestions'], 1)
+                new_suggestion = random.sample(self.question_jsons[self.current_round][JET_SUGGESTIONS], 1)
                 answers = map(lambda x:x[0], self.current_round_answers.values())
 
                 while new_suggestion in answers:
-                    new_suggestion = random.sample(self.question_jsons[self.current_round]['Suggestions'], 1)
+                    new_suggestion = random.sample(self.question_jsons[self.current_round][JET_SUGGESTIONS], 1)
                 
                 # insert using new random hex IDs (since the fib is automatic this shouldn't matter)
                 new_hex_id = random_hex_id()
